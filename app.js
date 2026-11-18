@@ -1,5 +1,6 @@
 (async function () {
-  const D = await (await fetch('data.json')).json();
+  const BUILD = '20261118c';
+  const D = await (await fetch('data.json?v=' + BUILD)).json();
   const C = window.Cluster;
   const SVGNS = 'http://www.w3.org/2000/svg';
   const MAX_NOTABLES = { Small: 1, Medium: 2, Large: 3 };
@@ -843,7 +844,16 @@
     right.appendChild(lbox);
     right.appendChild(h('p', { class: 'help has-text-grey mt-2' }, 'The front-only searches work because a Megalomaniac always has exactly 3 notables: excluding every notable on one side of your sort number leaves only layouts where yours is in front. They use many filters. If the trade site says the query is too complex, use the first search and check listings here.'));
   }
-  drawFinder();
+  // If an older index.html is deployed next to this script, create the finder card ourselves.
+  function ensureFinderCard() {
+    if ($('finder')) return true;
+    const card = h('div', { class: 'card mt-5', id: 'finderCard' }, '<header class="card-header"><p class="card-header-title"><span class="step" style="background:#3a2758;color:var(--mega, #b98cf0)">★</span>Megalomaniac notable finder</p></header><div class="card-content" id="finder"></div>');
+    const rules = $('rules');
+    if (rules && rules.parentNode) rules.parentNode.insertBefore(card, rules);
+    else (document.querySelector('.section .container') || document.body).appendChild(card);
+    return true;
+  }
+  try { ensureFinderCard(); drawFinder(); } catch (e) { console.error('Megalomaniac finder failed', e); }
   // keep finder's league/status line current when trade settings change
   const _saveTrade = saveTrade;
   saveTrade = function () { _saveTrade(); drawFinderSoon(); };
