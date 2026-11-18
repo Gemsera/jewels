@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cluster Jewel Layout Lab — PoE1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/bulma.min.css">
+<style>
+  /* ---------- Facepunch-style dark navy theme on top of Bulma 1.0 ---------- */
+  :root, [data-theme=dark] {
+    --bulma-scheme-h: 219;
+    --bulma-scheme-s: 36%;
+    --bulma-scheme-main-l: 8%;
+    --bulma-scheme-main-bis-l: 11%;
+    --bulma-scheme-main-ter-l: 14%;
+    --bulma-background-l: 13%;
+    --bulma-border-l: 22%;
+    --bulma-border-weak-l: 17%;
+    --bulma-text-l: 82%;
+    --bulma-text-strong-l: 96%;
+    --bulma-link-h: 207deg; --bulma-link-s: 90%; --bulma-link-l: 58%;
+    --bulma-primary-h: 207deg; --bulma-primary-s: 90%; --bulma-primary-l: 56%;
+    --bulma-info-h: 196deg;
+    --bulma-family-primary: Inter, "Segoe UI", Roboto, sans-serif;
+    --bulma-radius: 6px; --bulma-radius-large: 10px;
+    --gold: #e8c15a; --gold-d: #a8843c; --socket: #4fb3e8; --entry: #6fcf8a; --small: #93a0b8; --mega: #b98cf0;
+    --navy-0: #0b111c; --navy-1: #111a2a; --navy-2: #182337; --navy-3: #22304a;
+  }
+  html, body { background: var(--navy-0); }
+  body { min-height: 100vh; }
+  .title, .subtitle, .card-header-title, .navbar-brand .brand { font-family: Poppins, Inter, sans-serif; }
+  .navbar { background: #192337; border-bottom: 1px solid #263552; }
+  .navbar-brand .brand { font-weight: 700; letter-spacing: .2px; color: #fff; font-size: 1.05rem; display: flex; align-items: center; gap: .55rem; }
+  .brand-mark { width: 26px; height: 26px; border-radius: 6px; background: linear-gradient(135deg, #2f8fe0, #1b5fae); display: grid; place-items: center; box-shadow: 0 2px 10px rgba(47,143,224,.35); }
+  .hero.page-hero { background: linear-gradient(180deg, #192337 0%, var(--navy-0) 100%); }
+  .hero.page-hero .title { color: #fff; }
+  .hero.page-hero .subtitle { color: #9fb0cc; font-family: Inter, sans-serif; font-size: 1rem; }
+  .card { background: var(--navy-1); border: 1px solid #1f2c44; box-shadow: 0 6px 24px rgba(0,0,0,.25); border-radius: 10px; }
+  .card-header { box-shadow: none; border-bottom: 1px solid #1f2c44; }
+  .card-header-title { color: #e9eefa; font-weight: 600; font-size: .98rem; }
+  .card-header-title .step { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #1f3a5e; color: #8fc8ff; font-size: .75rem; margin-right: .55rem; }
+  .card-header-icon { cursor: default; }
+  .button.is-dark-soft { background: var(--navy-2); border-color: #263552; color: #cfd8ea; }
+  .button.is-dark-soft:hover { border-color: #3a5179; color: #fff; }
+  .button.is-dark-soft.is-selected, .button.is-dark-soft.is-active { background: #1f5fa8; border-color: #2f8fe0; color: #fff; }
+  .button.is-mega.is-selected { background: #5b3a8c; border-color: var(--mega); color: #fff; }
+  .tag.is-gold { background: #3a2f12; color: var(--gold); border: 1px solid #5d4a1b; }
+  .tag.is-suffix { background: #172a40; color: #8fc1ec; }
+  .tag.is-mega { background: #2e2045; color: var(--mega); }
+  .tag.is-hint { background: #163323; color: var(--entry); }
+  .tag.is-ghost { background: transparent; border: 1px solid #2a3a58; color: #8a9bb8; }
+  .select select, .input { background: var(--navy-2); border-color: #263552; color: #e5ebf7; }
+  .select:not(.is-multiple):not(.is-loading)::after { border-color: #7fb4ea; }
+  .label { color: #9fb0cc; font-weight: 500; font-size: .8rem; text-transform: uppercase; letter-spacing: .5px; }
+  .tabs.is-toggle li a { background: var(--navy-2); border-color: #263552; color: #b9c6dd; }
+  .tabs.is-toggle li.is-active a { background: #1f5fa8; border-color: #2f8fe0; color: #fff; }
+  .tabs.is-toggle li.is-active.mega a { background: #5b3a8c; border-color: var(--mega); }
+  .tabs.is-boxed li.is-active a { background: var(--navy-1); border-color: #1f2c44; border-bottom-color: transparent; color: #fff; }
+  .tabs a { border-bottom-color: #1f2c44; color: #9fb0cc; }
+  .tabs ul { border-bottom-color: #1f2c44; }
+  .breadcrumb a { color: #8fc8ff; padding: 0 .5em; }
+  .breadcrumb li.is-active a { color: #fff; font-weight: 600; }
+  .breadcrumb li + li::before { color: #4a5d80; }
+  .notification.node-info { background: var(--navy-2); border: 1px solid #263552; color: #cdd6e8; padding: .85rem 1rem; }
+  .table { background: transparent; color: #cdd6e8; }
+  .table th { color: #8a9bb8 !important; font-weight: 500; font-size: .78rem; text-transform: uppercase; letter-spacing: .4px; border-color: #1f2c44 !important; }
+  .table td { border-color: #1a2539 !important; vertical-align: top; }
+  .table.is-hoverable tbody tr:hover { background: #16223a !important; cursor: pointer; }
+  .table tr.is-sel { background: #1a2d4a !important; }
+  .t-Notable { color: var(--gold); font-weight: 600; }
+  .t-Socket { color: var(--socket); font-weight: 500; }
+  .t-Small { color: var(--small); }
+  .statline { font-size: .78rem; color: #8a9bb8; margin: .15rem 0 0; }
+  .pts { display: inline-grid; place-items: center; min-width: 26px; height: 26px; border-radius: 13px; background: #1c2a42; color: #e9eefa; font-weight: 600; font-size: .85rem; font-variant-numeric: tabular-nums; }
+  .pts.n { background: #3a2f12; color: var(--gold); }
+
+  /* layout grid: viewer → config → breakdown on mobile; side-by-side on desktop */
+  .lab-grid { display: grid; gap: 1.25rem; grid-template-columns: minmax(0, 1fr); grid-template-areas: "viewer" "config" "breakdown"; }
+  @media (min-width: 1024px) {
+    .lab-grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); grid-template-areas: "viewer config" "breakdown config"; align-items: start; }
+    #configCard { position: sticky; top: 1rem; max-height: calc(100vh - 2rem); display: flex; flex-direction: column; }
+    #configCard .card-content { overflow: auto; }
+  }
+  #viewerCard { grid-area: viewer; } #configCard { grid-area: config; } #breakdownCard { grid-area: breakdown; }
+
+  .viewer-wrap { position: relative; border-radius: 8px; overflow: hidden; background: radial-gradient(circle at 50% 45%, #15213a 0%, #0b111c 72%); border: 1px solid #1c2840; }
+  #detail { display: block; width: 100%; height: auto; aspect-ratio: 1/1; touch-action: manipulation; }
+  .viewer-tools { position: absolute; top: .6rem; right: .6rem; display: flex; gap: .4rem; }
+  .minimap { position: absolute; left: .6rem; top: .6rem; width: 92px; height: 92px; background: rgba(11,17,28,.85); border: 1px solid #263552; border-radius: 8px; padding: 4px; }
+  .minimap svg { width: 100%; height: 100%; display: block; }
+  @media (min-width: 769px) { .minimap { width: 130px; height: 130px; } }
+  .socket-picker .button { font-size: .8rem; }
+  .socket-picker .button small { color: #8a9bb8; margin-left: .3rem; font-size: .7rem; }
+  .socket-picker .button.is-selected small { color: #cfe3ff; }
+
+  .stats-level { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; }
+  .stat-box { background: var(--navy-2); border: 1px solid #263552; border-radius: 8px; padding: .55rem .4rem; text-align: center; }
+  .stat-box .heading { color: #8a9bb8; font-size: .66rem; margin-bottom: .1rem; letter-spacing: .6px; }
+  .stat-box .title { font-size: 1.45rem; color: #fff; margin: 0; font-variant-numeric: tabular-nums; }
+  .stat-box.gold .title { color: var(--gold); }
+
+  .legend .tag { font-size: .72rem; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: .35rem; }
+
+  .picked { display: flex; flex-wrap: wrap; gap: .4rem; }
+  .picked .tag { font-size: .8rem; height: auto; padding: .35rem .55rem; white-space: normal; }
+  .nlist { border: 1px solid #1f2c44; border-radius: 8px; overflow: auto; max-height: 360px; background: #0e1626; }
+  .nitem { display: flex; gap: .65rem; padding: .6rem .7rem; border-bottom: 1px solid #172238; cursor: pointer; align-items: flex-start; }
+  .nitem:last-child { border-bottom: 0; }
+  .nitem:hover { background: #132036; }
+  .nitem.sel { background: #1a2d4a; }
+  .nitem.dis { opacity: .45; cursor: not-allowed; }
+  .nitem .check { flex: none; width: 18px; height: 18px; border-radius: 4px; border: 1.5px solid #3a5179; margin-top: 2px; display: grid; place-items: center; font-size: 12px; color: #fff; }
+  .nitem.sel .check { background: #2f8fe0; border-color: #2f8fe0; }
+  .nitem .nm { color: #eef2fa; font-weight: 600; font-size: .9rem; }
+  .nitem .nm .tag { margin-left: .3rem; vertical-align: 1px; }
+  .nitem .meta { color: #8a9bb8; font-size: .76rem; line-height: 1.35; margin-top: .15rem; }
+  .why ol { margin-left: 1.1rem; }
+  .why li { margin-bottom: .45rem; font-size: .88rem; color: #c3cde0; }
+  .why li b { color: #8fc8ff; }
+  .rules .content p, .rules .content li { color: #c3cde0; font-size: .92rem; }
+  .rules .content code { background: #182337; color: #8fc8ff; padding: .1em .4em; border-radius: 4px; font-size: .82rem; }
+  .rules .content strong { color: #fff; }
+  .rules .content h4 { color: #fff; font-family: Poppins, sans-serif; }
+  .footer { background: #0a0f19; border-top: 1px solid #172238; padding: 2rem 1.5rem 3rem; }
+  .footer p { color: #6f80a0; font-size: .82rem; }
+  text { font-family: Inter, sans-serif; }
+  .is-hidden-empty:empty { display: none; }
+  .trade-box { border-top: 1px solid #1f2c44; padding-top: 1rem; }
+  .trade-opts { display: flex; flex-direction: column; gap: .35rem; font-size: .85rem; color: #c3cde0; }
+  .trade-opts .checkbox:hover { color: #fff; }
+  .trade-opts input { accent-color: #2f8fe0; margin-right: .3rem; }
+  .button.is-link { background: #2f8fe0; }
+  .button.is-link:hover { background: #3d9bec; }
+  .textarea { background: var(--navy-2); border-color: #263552; color: #cfd8ea; font-size: .72rem; }
+  .footer code, .content code { background: #182337; color: #8fc8ff; }
+  @media (max-width: 768px) {
+    .section { padding: 1rem .75rem 2rem; }
+    .hero.page-hero .hero-body { padding: 1.25rem .9rem .5rem; }
+    .hero.page-hero .title { font-size: 1.3rem; }
+    .hero.page-hero .subtitle { font-size: .88rem; }
+    .card-content { padding: .9rem; }
+    .socket-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: .4rem; }
+    .socket-picker .button { margin: 0 !important; width: 100%; padding-left: .3rem; padding-right: .3rem; }
+    .minimap { width: 64px; height: 64px; top: auto; bottom: .5rem; left: .5rem; }
+    .stat-box .title { font-size: 1.2rem; }
+    .stat-box .heading { font-size: .6rem; }
+    .tabs.is-toggle a { padding-left: .4em; padding-right: .4em; }
+    .level-right { margin-top: .4rem; }
+    .lab-grid { gap: 1rem; }
+  }
+</style>
+</head>
+<body>
+<nav class="navbar" role="navigation" aria-label="main navigation">
+  <div class="container">
+    <div class="navbar-brand">
+      <a class="navbar-item brand" id="brandLink">
+        <span class="brand-mark"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2l8 6-3 12H7L4 8z" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><path d="M4 8h16M12 2l-3 6 3 12 3-12z" stroke="#cfe6ff" stroke-width="1.3" stroke-linejoin="round"/></svg></span>
+        Cluster Jewel Lab
+      </a>
+      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" id="burger"><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></a>
+    </div>
+    <div class="navbar-menu" id="navMenu">
+      <div class="navbar-start">
+        <a class="navbar-item" data-scroll="viewerCard">Layout</a>
+        <a class="navbar-item" data-scroll="configCard">Configure</a>
+        <a class="navbar-item" data-scroll="rules">How it works</a>
+      </div>
+      <div class="navbar-end">
+        <div class="navbar-item"><span class="tag is-ghost">PoE1 · tree 3.30</span></div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<section class="hero page-hero is-small">
+  <div class="hero-body">
+    <div class="container">
+      <h1 class="title is-4">Cluster Jewel Layout Lab</h1>
+      <p class="subtitle">See where notables, sockets and small passives land on a cluster jewel, and why. Works for rare cluster jewels and Megalomaniac, in every cluster socket on the tree.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section pt-4">
+  <div class="container">
+    <div class="lab-grid">
+
+      <div class="card" id="viewerCard">
+        <header class="card-header">
+          <p class="card-header-title"><span class="step">1</span>Socket &amp; layout</p>
+        </header>
+        <div class="card-content">
+          <div class="buttons are-small socket-picker mb-3" id="socketbar"></div>
+          <div class="viewer-wrap">
+            <svg id="detail" viewBox="0 0 100 100" aria-label="Cluster layout"></svg>
+            <div class="minimap" title="Tap a socket on the minimap to switch"><svg id="overview" viewBox="0 0 100 100" aria-label="Passive tree overview"></svg></div>
+            <div class="viewer-tools buttons has-addons are-small" id="zoomTools"></div>
+          </div>
+          <div class="stats-level mt-3" id="stats"></div>
+          <div class="tags legend mt-3">
+            <span class="tag is-ghost"><span class="dot" style="background:var(--gold)"></span>Notable</span>
+            <span class="tag is-ghost"><span class="dot" style="background:var(--small)"></span>Small passive</span>
+            <span class="tag is-ghost"><span class="dot" style="background:var(--socket)"></span>Socket (+ = empty, tap to fill)</span>
+            <span class="tag is-ghost"><span class="dot" style="background:transparent;border:2px solid var(--entry)"></span>Entry</span>
+            <span class="tag is-ghost">Numbers = points from the parent socket</span>
+          </div>
+          <div class="notification node-info mt-2 mb-0" id="info"></div>
+        </div>
+      </div>
+
+      <div class="card" id="configCard">
+        <header class="card-header">
+          <p class="card-header-title"><span class="step">2</span>Configure the jewel</p>
+        </header>
+        <div class="card-content">
+          <nav class="breadcrumb is-small mb-3" aria-label="breadcrumbs"><ul id="crumbs"></ul></nav>
+          <div id="config"></div>
+        </div>
+      </div>
+
+      <div class="card" id="breakdownCard">
+        <header class="card-header">
+          <p class="card-header-title"><span class="step">3</span>Placement breakdown</p>
+        </header>
+        <div class="card-content" id="result"></div>
+      </div>
+
+    </div>
+
+    <div class="card rules mt-5" id="rules">
+      <header class="card-header"><p class="card-header-title">How placement works</p></header>
+      <div class="card-content">
+        <div class="tabs is-small is-boxed mb-4" id="ruleTabs">
+          <ul>
+            <li class="is-active" data-tab="t-short"><a>Overview</a></li>
+            <li data-tab="t-sockets"><a>Sockets &amp; notables</a></li>
+            <li data-tab="t-small"><a>Small passives &amp; links</a></li>
+            <li data-tab="t-rot"><a>Tree location</a></li>
+            <li data-tab="t-mega"><a>Megalomaniac</a></li>
+            <li data-tab="t-tips"><a>Tips</a></li>
+          </ul>
+        </div>
+        <div class="content" data-pane="t-short">
+          <p>Every cluster jewel uses a fixed <strong>set of numbered slots</strong>: index 0–11 for Medium and Large, 0–5 for Small. Index 0 is always the <strong>entry</strong>, connected to the socket the jewel sits in. The game fills the slots in a fixed order: <strong>sockets first, then notables, then small passives</strong>. It then links the nodes in index order around a ring.</p>
+          <p>Which notable takes which slot is decided by a <strong>hidden sort number</strong> for each notable in the game data. It is not the order printed on the item, and it is not alphabetical. The notable with the lowest number always takes the lowest free notable slot.</p>
+          <p>The socket's location on the tree <strong>only rotates</strong> the jewel so the entry faces the parent socket. It never changes which slot a notable lands in or how many points it costs.</p>
+        </div>
+        <div class="content is-hidden" data-pane="t-sockets">
+          <h4 class="is-size-6">Sockets</h4>
+          <ul>
+            <li>Large: socket list <code>[4, 8, 6]</code>. A rare Large has 2 sockets, at 4 and 8. A Large with exactly 1 socket always uses 6. <em>Voices</em> (3 sockets) uses 4, 8 and 6.</li>
+            <li>Medium: socket list <code>[6]</code>, on the opposite side of the ring from the entry. Small jewels have no sockets.</li>
+          </ul>
+          <h4 class="is-size-6">Notables</h4>
+          <ul>
+            <li>Notable slot lists: Large <code>[6, 4, 8, 10, 2]</code>, Medium <code>[6, 10, 2, 0]</code>, Small <code>[4]</code>.</li>
+            <li>The game walks the list and skips slots already taken by sockets until it has one slot per notable. It then <strong>sorts those slots ascending</strong> and gives them out by sort number.</li>
+            <li>Medium special cases: a 4-passive Medium moves 10→9 and 2→3, putting its notables right next to the entry. A Medium with no socket and 2 notables moves 6→4 and 10→8.</li>
+            <li>Rare Large with 2 sockets and 3 notables → slots <code>[2, 6, 10]</code>: lowest sort number goes in front, the middle one at the back, the highest in front.</li>
+            <li>Large with 2 notables → slots <code>[6, 10]</code>: the <strong>lower</strong> sort number goes to the back.</li>
+          </ul>
+        </div>
+        <div class="content is-hidden" data-pane="t-small">
+          <ul>
+            <li>Small passive slot lists: Large <code>[0, 4, 6, 8, 10, 2, 7, 5, 9, 3, 11, 1]</code>, Medium <code>[0, 6, 8, 4, 10, 2]</code>, Small <code>[0, 4, 2]</code>. Free slots fill in that order. 4- and 5-passive Medium jewels remap 8→9 and 4→3.</li>
+            <li>All nodes are linked in index order. Medium and Large jewels close the ring (last ↔ first), so you can path both ways from the entry. Small jewels are a straight chain.</li>
+          </ul>
+        </div>
+        <div class="content is-hidden" data-pane="t-rot">
+          <ul>
+            <li>The tree has 6 Large sockets on its outer ring, and each accepts Large, Medium or Small jewels. Sockets added by a Large accept Medium or Small. Sockets added by a Medium accept Small only.</li>
+            <li>Each socket has a hidden <strong>position proxy</strong>, an invisible group where the cluster is drawn, plus an <strong>orbit offset</strong> for each jewel size. A node's position is <code>(index + offset) mod slots</code>, which turns index 0 to face the parent socket.</li>
+            <li>Large jewels sit on orbit 3 (radius 335) and Medium on orbit 2 (radius 162). Both are 16-slot orbits since 3.17, so the 12-slot layout is spread onto them. Small jewels sit on orbit 1 (radius 82, 6 slots).</li>
+            <li>The ring and its links turn as one piece, so point costs inside a jewel are identical in every socket. Location only changes how far the socket is from your tree, which way the cluster faces, and where its child sockets appear.</li>
+          </ul>
+        </div>
+        <div class="content is-hidden" data-pane="t-mega">
+          <ul>
+            <li>Megalomaniac is a <strong>Medium</strong> cluster jewel with <strong>4 passives, 0 sockets and 3 notables</strong>. Its small passive grants nothing. The notables can be any cluster notable, including Large-only ones, suffixes and a few that no longer roll on rare jewels.</li>
+            <li>The 4-passive Medium rule applies: <code>[6, 10, 2, 0]</code> → <code>[6, 9, 3, 0]</code>. The first three are taken and sorted → <code>[3, 6, 9]</code>. The “Nothing” passive takes index 0.</li>
+            <li><strong>Lowest sort number → 3 (front, 2 pts), middle → 6 (back, 3 pts), highest → 9 (front, 2 pts).</strong> Both front notables together cost 3 points, and the whole jewel costs 4.</li>
+            <li>If you only want two of the three notables, the one you don't want needs the middle sort number.</li>
+          </ul>
+        </div>
+        <div class="content is-hidden" data-pane="t-tips">
+          <ul>
+            <li>An 8-passive Large with 3 notables puts 2 notables right next to the entry and 1 at the back. It's the most point-efficient Large.</li>
+            <li>If you only want one notable from a 2-notable Large, it must be the one with the <strong>higher</strong> sort number, which sits in front.</li>
+            <li>On a 4-passive Medium every notable is next to the entry: 2 points for 1 notable, 3 for both.</li>
+            <li>On a Small jewel the notable is always at the end of the chain: 2 points on a 2-passive Small, 3 on a 3-passive Small.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <p>The placement logic is ported from Path of Building Community (<code>PassiveSpec:BuildSubgraph</code>, <code>getClusterJewelNotableIndices</code>). Tree layout, socket proxies, orbit offsets, notable sort order and notable pools come from PoB's game data (tree 3.30). Every computed child-socket position matches its socket node on the real tree.</p>
+    <p class="mt-2">Unofficial fan tool, not affiliated with Grinding Gear Games.</p>
+  </div>
+</footer>
+<script src="cluster.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
