@@ -23,3 +23,10 @@ To test locally run `python3 -m http.server` in this folder and open http://loca
 ## Credits
 Placement logic and game data derived from [Path of Building Community](https://github.com/PathOfBuildingCommunity/PathOfBuilding) (MIT).
 Unofficial fan tool, not affiliated with or endorsed by Grinding Gear Games.
+
+## SEO / social previews
+`index.html` contains a meta description, Open Graph and Twitter card tags, and schema.org
+`WebApplication` data. Link previews (Discord, Reddit, X) work best with an **absolute** image URL:
+once you know your Pages address, change `og:image` and `twitter:image` from `og-image.png` to
+`https://<your-user>.github.io/<repo>/og-image.png`, and optionally add
+`<link rel="canonical" href="https://<your-user>.github.io/<repo>/">`.

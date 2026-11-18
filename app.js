@@ -1,5 +1,5 @@
 (async function () {
-  const BUILD = '20261118c';
+  const BUILD = '20261118d';
   const D = await (await fetch('data.json?v=' + BUILD)).json();
   const C = window.Cluster;
   const SVGNS = 'http://www.w3.org/2000/svg';
