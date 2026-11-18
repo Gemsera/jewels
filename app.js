@@ -71,7 +71,7 @@
       if (typeof tp.match === 'string') state.trade.match = tp.match;
     }
   } catch (e) { /* storage unavailable */ }
-  function saveTrade() { try { localStorage.setItem(TRADE_STORE, JSON.stringify(state.trade)); } catch (e) { } }
+  var saveTrade = function () { try { localStorage.setItem(TRADE_STORE, JSON.stringify(state.trade)); } catch (e) { } };
   try {
     const saved = JSON.parse(localStorage.getItem(STORE) || 'null');
     if (saved && D.sockets[saved.root]) {
@@ -456,6 +456,7 @@
       },
     });
     if (cfg.notables.length < 3) box.appendChild(h('div', { class: 'notification is-warning is-light mt-3 py-2 px-3 is-size-7' }, 'A real Megalomaniac always has exactly 3 notables. Fewer is shown for theory only.'));
+    box.appendChild(h('button', { class: 'button is-small is-mega is-selected mt-3', onclick: () => $('finderCard').scrollIntoView({ behavior: 'smooth' }) }, '★ Want one notable in front? Open the Megalomaniac finder'));
     tradePanel(box, cfg, null);
   }
 
@@ -622,6 +623,231 @@
     drawSocketBar(); drawOverview(all); drawZoomTools(all); drawDetail(all); drawStats(all); drawInfo(all); drawCrumbs(all); drawConfig(); drawResult(all);
     save();
   }
+
+  // ---------- Megalomaniac notable finder
+  const FINDER_STORE = 'cjlab.finder';
+  const finder = { want: ['Primordial Bond'], check: ['', ''] , paste: '' };
+  try {
+    const f = JSON.parse(localStorage.getItem(FINDER_STORE) || 'null');
+    if (f && Array.isArray(f.want)) finder.want = f.want.filter(n => notableByName[n]).slice(0, 1);
+    if (f && Array.isArray(f.check)) finder.check = [0, 1].map(i => notableByName[f.check[i]] ? f.check[i] : '');
+  } catch (e) { }
+  if (!finder.want.length) finder.want = [notableByName['Primordial Bond'] ? 'Primordial Bond' : D.notables[0].name];
+  function saveFinder() { try { localStorage.setItem(FINDER_STORE, JSON.stringify({ want: finder.want, check: finder.check })); } catch (e) { } }
+  const SORTED = D.notables.slice().sort((a, b) => a.sort - b.sort);
+  const SLOT_TXT = ['front (slot 3, 2 pts)', 'back (slot 6, 3 pts)', 'front (slot 9, 2 pts)'];
+
+  function autocomplete(value, placeholder, onPick, exclude = []) {
+    const wrap = h('div', { class: 'ac control has-icons-left' });
+    const inp = h('input', { class: 'input', type: 'search', placeholder, autocomplete: 'off' });
+    inp.value = value || '';
+    wrap.appendChild(inp);
+    wrap.appendChild(h('span', { class: 'icon is-small is-left' }, '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7f93b5" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>'));
+    let list = null, act = 0, items = [];
+    function close() { if (list) { list.remove(); list = null; } }
+    function open() {
+      close();
+      const q = inp.value.trim().toLowerCase();
+      items = SORTED.filter(n => !exclude.includes(n.name) && (!q || n.name.toLowerCase().includes(q) || n.stats.some(x => x.toLowerCase().includes(q)))).slice(0, 40);
+      list = h('div', { class: 'ac-list' });
+      items.forEach((n, i) => {
+        const it = h('div', { class: 'ac-item' + (i === act ? ' act' : '') }, `<span>${esc(n.name)}</span><small>#${n.sort}</small>`);
+        it.addEventListener('mousedown', ev => { ev.preventDefault(); pick(n); });
+        list.appendChild(it);
+      });
+      if (!items.length) list.appendChild(h('div', { class: 'ac-item' }, '<small>No match</small>'));
+      wrap.appendChild(list);
+    }
+    function pick(n) { inp.value = n.name; close(); onPick(n.name); }
+    inp.addEventListener('focus', () => { act = 0; open(); });
+    inp.addEventListener('input', () => { act = 0; open(); if (!inp.value.trim()) onPick(''); });
+    inp.addEventListener('blur', () => setTimeout(close, 120));
+    inp.addEventListener('keydown', ev => {
+      if (!list) return;
+      if (ev.key === 'ArrowDown') { act = Math.min(items.length - 1, act + 1); open(); ev.preventDefault(); }
+      else if (ev.key === 'ArrowUp') { act = Math.max(0, act - 1); open(); ev.preventDefault(); }
+      else if (ev.key === 'Enter' && items[act]) { pick(items[act]); ev.preventDefault(); }
+      else if (ev.key === 'Escape') close();
+    });
+    return wrap;
+  }
+
+  function megaQuery(stats) {
+    return { query: { status: { option: state.trade.status || 'securable' }, name: 'Megalomaniac', type: 'Medium Cluster Jewel', stats }, sort: { price: 'asc' } };
+  }
+  function megaUrl(stats) {
+    const league = (state.trade.league || 'Standard').trim() || 'Standard';
+    return `https://www.pathofexile.com/trade/search/${encodeURIComponent(league)}?q=${encodeURIComponent(JSON.stringify(megaQuery(stats)))}`;
+  }
+  const ids = arr => arr.map(n => ({ id: n.trade }));
+
+  // A Megalomaniac has exactly 3 notables, so "front" conditions can be written as exclusions.
+  function finderLinks(want) {
+    const links = [];
+    const must = { type: 'and', filters: ids(want) };
+    if (want.length === 1) {
+      const t = want[0];
+      const lower = SORTED.filter(n => n.sort < t.sort), higher = SORTED.filter(n => n.sort > t.sort);
+      links.push({ title: `Any Megalomaniac with ${t.name}`, desc: 'Every listing with it, in any position. Check each one with the checker.', n: 1, url: megaUrl([must]) });
+      links.push({ title: `${t.name} in front, slot 3`, desc: `Excludes the ${lower.length} notables with a lower sort number, so both other notables sort higher and ${t.name} takes the lowest slot.`, n: 1 + lower.length, url: megaUrl([must, { type: 'not', filters: ids(lower) }]) });
+      links.push({ title: `${t.name} in front, slot 9`, desc: `Excludes the ${higher.length} notables with a higher sort number, so both other notables sort lower and ${t.name} takes the highest slot.`, n: 1 + higher.length, url: megaUrl([must, { type: 'not', filters: ids(higher) }]) });
+    } else {
+      const [a, b] = want.slice().sort((x, y) => x.sort - y.sort);
+      const between = SORTED.filter(n => n.sort > a.sort && n.sort < b.sort);
+      const outside = SORTED.filter(n => (n.sort < a.sort || n.sort > b.sort));
+      links.push({ title: `Any Megalomaniac with ${a.name} and ${b.name}`, desc: 'Both notables, in any position.', n: 2, url: megaUrl([must]) });
+      if (!between.length) links.push({ title: 'Both in front is impossible', desc: `No notable sorts between #${a.sort} and #${b.sort}, so the third notable can't take the back slot.`, n: 0, url: '' });
+      else if (between.length <= outside.length) links.push({ title: 'Both in front', desc: `The third notable must sort between them. Requires 1 of the ${between.length} notables between #${a.sort} and #${b.sort}.`, n: 2 + between.length, url: megaUrl([must, { type: 'count', value: { min: 1 }, filters: ids(between) }]) });
+      else links.push({ title: 'Both in front', desc: `The third notable must sort between them. Excludes the ${outside.length} notables outside #${a.sort}–#${b.sort}.`, n: 2 + outside.length, url: megaUrl([must, { type: 'not', filters: ids(outside) }]) });
+    }
+    return links;
+  }
+
+  function verdictFor(want, others) {
+    const trio = want.concat(others);
+    if (trio.length !== 3 || new Set(trio.map(n => n.name)).size !== 3) return null;
+    const sorted = trio.slice().sort((x, y) => x.sort - y.sort);
+    return { sorted, pos: want.map(w => sorted.indexOf(w)) };
+  }
+
+  function parsePaste(text) {
+    const out = [];
+    const re = /Added Passive Skill is ([^\n\r]+)/gi; let m;
+    while ((m = re.exec(text))) { const nm = m[1].trim().replace(/\s*\(.*\)$/, ''); const n = SORTED.find(x => x.name.toLowerCase() === nm.toLowerCase()); if (n && !out.includes(n)) out.push(n); }
+    return out;
+  }
+
+  function drawFinder() {
+    const box = $('finder'); box.innerHTML = '';
+    const want = finder.want.map(n => notableByName[n]).filter(Boolean);
+    box.appendChild(h('p', { class: 'statline mb-3', style: 'font-size:.88rem' }, 'Pick the notable you want close to the socket. The finder lists which partner notables keep it in front, checks any Megalomaniac you find, and builds trade searches that only return good ones.'));
+    const grid = h('div', { class: 'finder-grid' });
+    const left = h('div'), right = h('div');
+    grid.appendChild(left); grid.appendChild(right); box.appendChild(grid);
+
+    // --- wanted notables
+    left.appendChild(h('label', { class: 'label' }, 'Notable I want in front'));
+    const wf = h('div', { class: 'field' });
+    wf.appendChild(autocomplete(finder.want[0], 'e.g. Primordial Bond', v => { if (v) { finder.want = [v]; saveFinder(); drawFinder(); } }));
+    left.appendChild(wf);
+    left.appendChild(h('p', { class: 'help has-text-grey mb-2' }, 'Position only matters when you want one notable. Any two notables on a Megalomaniac cost 3 points together, whichever slots they take: the entry plus the two notables.'));
+
+    // --- sort bar + explanation
+    // position by rank, not raw value (sort numbers have large gaps)
+    const pct = v => (SORTED.filter(n => n.sort < v).length / (SORTED.length - 1)) * 100;
+    const bar = h('div', { class: 'sortbar mt-2 mb-2' });
+    let explain = '';
+    if (want.length === 1) {
+      const t = want[0];
+      const nLower = SORTED.filter(n => n.sort < t.sort).length, nHigher = SORTED.filter(n => n.sort > t.sort).length;
+      bar.innerHTML = `<div class="seg" style="left:0;width:${pct(t.sort)}%;background:#163323"></div><div class="seg" style="left:${pct(t.sort)}%;right:0;background:#132a3f"></div><div class="mark" style="left:calc(${pct(t.sort)}% - 1px)"></div><span class="lbl" style="left:6px">${nLower} lower</span><span class="lbl" style="right:6px">${nHigher} higher</span>`;
+      explain = `<b class="t-Notable">${esc(t.name)}</b> has sort #${t.sort}. On a Megalomaniac it lands <b>in front</b> when both other notables are on the <b>same side</b>: both lower (it takes slot 9) or both higher (it takes slot 3). If one is lower and one is higher, it goes to the <b>back</b> (3 points).`;
+    } else {
+      const [a, b] = want.slice().sort((x, y) => x.sort - y.sort);
+      const nb = SORTED.filter(n => n.sort > a.sort && n.sort < b.sort).length;
+      bar.innerHTML = `<div class="seg" style="left:0;width:${pct(a.sort)}%;background:#351a1a"></div><div class="seg" style="left:${pct(a.sort)}%;width:${pct(b.sort) - pct(a.sort)}%;background:#163323"></div><div class="seg" style="left:${pct(b.sort)}%;right:0;background:#351a1a"></div><div class="mark" style="left:calc(${pct(a.sort)}% - 1px)"></div><div class="mark" style="left:calc(${pct(b.sort)}% - 1px)"></div>`;
+      explain = `<b class="t-Notable">${esc(a.name)}</b> (#${a.sort}) and <b class="t-Notable">${esc(b.name)}</b> (#${b.sort}) are both in front only when the third notable sorts <b>between</b> them. ${nb} notable${nb === 1 ? '' : 's'} qualify (green). Anything outside pushes one of yours to the back.`;
+    }
+    left.appendChild(bar);
+    left.appendChild(h('p', { class: 'statline mb-3', style: 'font-size:.86rem;color:#c3cde0' }, explain));
+
+    // --- partner lists
+    const lists = h('div', { class: 'tabs is-small is-boxed mb-2' });
+    const panes = h('div');
+    let groups;
+    if (want.length === 1) {
+      const t = want[0];
+      groups = [['lower', `Lower than #${t.sort}`, SORTED.filter(n => n.sort < t.sort), `If both others are from this list, ${t.name} takes slot 9 (front).`],
+                ['higher', `Higher than #${t.sort}`, SORTED.filter(n => n.sort > t.sort), `If both others are from this list, ${t.name} takes slot 3 (front).`]];
+    } else {
+      const [a, b] = want.slice().sort((x, y) => x.sort - y.sort);
+      groups = [['between', 'Good third notables', SORTED.filter(n => n.sort > a.sort && n.sort < b.sort && !want.includes(n)), 'Any of these as the third notable keeps both of yours in front.']];
+    }
+    const ul = h('ul');
+    let activeG = groups[0][0];
+    const q = h('input', { class: 'input is-small mb-2', type: 'search', placeholder: 'Filter this list…' });
+    const plist = h('div', { class: 'nlist', style: 'max-height:260px' });
+    const note = h('p', { class: 'help has-text-grey mb-1' });
+    function fillP() {
+      const g = groups.find(x => x[0] === activeG);
+      note.textContent = g[3];
+      const s2 = q.value.trim().toLowerCase();
+      plist.innerHTML = '';
+      g[2].filter(n => !want.includes(n) && (!s2 || n.name.toLowerCase().includes(s2) || n.stats.some(x => x.toLowerCase().includes(s2)))).forEach(n => {
+        plist.appendChild(h('div', { class: 'nitem', style: 'cursor:default' }, `<div><div class="nm">${esc(n.name)}<span class="tag is-small is-ghost">#${n.sort}</span></div><div class="meta">${n.stats.map(esc).join(' · ')}</div></div>`));
+      });
+      if (!plist.children.length) plist.appendChild(h('div', { class: 'nitem statline' }, 'None.'));
+    }
+    groups.forEach(([k, t, arr]) => {
+      const li = h('li', { class: k === activeG ? 'is-active' : '' });
+      li.appendChild(h('a', { onclick: () => { activeG = k; ul.querySelectorAll('li').forEach(x => x.classList.toggle('is-active', x === li)); fillP(); } }, `${esc(t)} <span class="tag is-small is-ghost ml-1">${arr.filter(n => !want.includes(n)).length}</span>`));
+      ul.appendChild(li);
+    });
+    lists.appendChild(ul);
+    left.appendChild(lists); left.appendChild(note); left.appendChild(q); left.appendChild(plist);
+    q.addEventListener('input', fillP); fillP();
+
+    // --- checker
+    right.appendChild(h('label', { class: 'label' }, 'Check a Megalomaniac'));
+    const need = 3 - want.length;
+    const verdictBox = h('div', { class: 'mb-3' });
+    const ta = h('textarea', { class: 'textarea is-small mb-2', rows: 3, placeholder: 'Paste the item text (Ctrl+C in game, or copy the mod lines from a trade listing)…' });
+    ta.value = finder.paste || '';
+    right.appendChild(ta);
+    const pickers = h('div', { class: 'columns is-variable is-2 mb-0' });
+    for (let i = 0; i < need; i++) {
+      const c = h('div', { class: 'column' });
+      c.appendChild(autocomplete(finder.check[i], `Other notable ${need > 1 ? i + 1 : ''}`.trim(), v => { finder.check[i] = v; saveFinder(); showVerdict(); }, finder.want));
+      pickers.appendChild(c);
+    }
+    right.appendChild(pickers);
+    right.appendChild(verdictBox);
+    ta.addEventListener('input', () => {
+      finder.paste = ta.value;
+      const found = parsePaste(ta.value).filter(n => !want.includes(n));
+      const hasWant = want.every(w => parsePaste(ta.value).includes(w));
+      if (found.length) {
+        finder.check = [found[0] ? found[0].name : '', found[1] ? found[1].name : ''];
+        saveFinder();
+        pickers.querySelectorAll('input').forEach((inp, i) => { inp.value = finder.check[i] || ''; });
+      }
+      showVerdict(ta.value.trim() && !hasWant ? `This item doesn't have ${want.map(w => w.name).join(' and ')}.` : '');
+    });
+    function showVerdict(warnText) {
+      const others = finder.check.slice(0, need).map(n => notableByName[n]).filter(Boolean);
+      const v = verdictFor(want, others);
+      if (warnText) { verdictBox.innerHTML = `<div class="verdict bad">${esc(warnText)}</div>`; return; }
+      if (!v) { verdictBox.innerHTML = `<div class="verdict neutral">Pick the other ${need === 1 ? 'notable' : 'two notables'} (or paste the item) to see where ${want.length === 1 ? esc(want[0].name) + ' lands' : 'yours land'}.</div>`; return; }
+      const good = v.pos.every(p => p !== 1);
+      const rows = v.sorted.map((n, i) => `<li>${esc(SLOT_TXT[i])}: <b class="${want.includes(n) ? 't-Notable' : ''}">${esc(n.name)}</b> <span class="has-text-grey">#${n.sort}</span></li>`).join('');
+      const cost = good ? (want.length === 1 ? 2 : 3) : (want.length === 1 ? 3 : 4);
+      verdictBox.innerHTML = `<div class="verdict ${good ? 'good' : 'bad'}"><p class="mb-1"><b>${good ? '✓ In front' : '✗ At the back'}</b>: ${want.length === 1 ? `${esc(want[0].name)} costs ${cost} points` : `taking both costs ${cost} points`}.</p><ol style="margin-left:1.1rem;font-size:.85rem">${rows}</ol></div>`;
+    }
+    showVerdict();
+
+    // --- trade links
+    right.appendChild(h('label', { class: 'label mt-4' }, 'Trade searches'));
+    right.appendChild(h('p', { class: 'help has-text-grey mb-2' }, `League: <b>${esc(state.trade.league || 'Standard')}</b> · ${esc((STATUS_OPTIONS.find(o => o[0] === state.trade.status) || [0, ''])[1])}. Change these in the Trade search section of step 2.`));
+    const lbox = h('div');
+    finderLinks(want).forEach(L => {
+      const row = h('div', { class: 'link-row' });
+      row.appendChild(h('div', { class: 'grow' }, `<p class="has-text-weight-semibold" style="color:#e9eefa">${esc(L.title)}</p><p class="statline">${esc(L.desc)}${L.n > 1 ? ` · ${L.n} filters` : ''}</p>`));
+      if (L.url) {
+        const a = h('a', { class: 'button is-link is-small', href: L.url, target: '_blank', rel: 'noopener' }, 'Open');
+        const c = h('button', { class: 'button is-dark-soft is-small' }, 'Copy');
+        c.addEventListener('click', async () => { try { await navigator.clipboard.writeText(L.url); c.textContent = 'Copied ✓'; } catch (e) { c.textContent = 'Copy failed'; } setTimeout(() => c.textContent = 'Copy', 1800); });
+        row.appendChild(a); row.appendChild(c);
+      }
+      lbox.appendChild(row);
+    });
+    right.appendChild(lbox);
+    right.appendChild(h('p', { class: 'help has-text-grey mt-2' }, 'The front-only searches work because a Megalomaniac always has exactly 3 notables: excluding every notable on one side of your sort number leaves only layouts where yours is in front. They use many filters. If the trade site says the query is too complex, use the first search and check listings here.'));
+  }
+  drawFinder();
+  // keep finder's league/status line current when trade settings change
+  const _saveTrade = saveTrade;
+  saveTrade = function () { _saveTrade(); drawFinderSoon(); };
+  let ft; function drawFinderSoon() { clearTimeout(ft); ft = setTimeout(drawFinder, 300); }
   function applyHash() {
     if ((location.hash || '').toLowerCase() === '#megalomaniac') { state.jewels[state.root] = megaCfg(); state.focus = state.root; state.sel = null; }
   }
